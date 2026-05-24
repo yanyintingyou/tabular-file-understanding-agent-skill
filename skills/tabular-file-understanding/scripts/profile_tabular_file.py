@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import xml.etree.ElementTree as ET
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 EMPTY_MARKERS = {"", "na", "n/a", "null", "none", "nan", ".", "-", "--"}
 DATE_PATTERNS = [
     re.compile(r"^\d{4}-\d{1,2}-\d{1,2}$"),
@@ -65,6 +65,54 @@ def safe_cell(value: Any, max_chars: int = 120, redact: bool = False) -> str:
 def safe_row(row: List[Any], max_chars: int = 120, redact: bool = False, max_cols: int = 80) -> List[str]:
     row = row[:max_cols]
     return [safe_cell(v, max_chars=max_chars, redact=redact) for v in row]
+
+
+def strip_column_value_samples(profiles: List[Dict[str, Any]]) -> None:
+    """Remove all retained row-level and column-level value samples in-place."""
+    for prof in profiles:
+        if not isinstance(prof, dict):
+            continue
+        prof["samples"] = {"head_rows": [], "representative_rows": []}
+        for col in prof.get("columns", []) or []:
+            if isinstance(col, dict):
+                col["examples"] = []
+                col["top_values_sample"] = []
+
+
+def strip_locator_value_samples(locator: Dict[str, Any]) -> None:
+    """Remove sample-derived values/counts from the domain locator in-place."""
+    locator["sample_values_suppressed"] = True
+    locator.setdefault("warnings", []).append("--no-samples suppressed sample-derived locator indexes, frequency samples, key checks, and value summaries.")
+    for key in ["indicator_index", "entity_index"]:
+        idx = locator.get(key)
+        if isinstance(idx, dict):
+            idx["unique_count_sample"] = None
+            idx["top_values"] = []
+            idx["mapping_required"] = False
+            idx["sample_values_suppressed"] = True
+    tc = locator.get("time_coverage")
+    if isinstance(tc, dict):
+        for k in ["overall_min_sample", "overall_max_sample", "frequencies_detected_sample", "by_frequency_sample", "mixed_frequency_sample"]:
+            if k in tc:
+                tc[k] = [] if k.endswith("_sample") and isinstance(tc.get(k), list) else None
+        tc["sample_values_suppressed"] = True
+    for item in locator.get("wide_time_value_columns", []) or []:
+        if isinstance(item, dict):
+            for k in ["missing_rate_sample", "non_empty_sample_count", "numeric_summary_sample", "date_summary_sample", "top_values_sample", "examples"]:
+                item.pop(k, None)
+            item["sample_values_suppressed"] = True
+    obs = locator.get("observation_locator")
+    if isinstance(obs, dict):
+        key_check = obs.get("key_uniqueness_check")
+        if isinstance(key_check, dict):
+            key_cols = key_check.get("key_columns", [])
+            obs["key_uniqueness_check"] = {
+                "tested_on_rows": 0,
+                "key_columns": key_cols,
+                "duplicate_key_count_sample": None,
+                "is_unique_in_sample": None,
+                "sample_values_suppressed": True,
+            }
 
 
 
@@ -260,6 +308,27 @@ def detect_dialect(sample_text: str, file_type: str) -> Tuple[csv.Dialect, List[
         return csv.excel, warnings
 
 
+def looks_short_code_header_candidate(row: List[str]) -> bool:
+    """Return True for rows that could be either headers or data labels.
+
+    Examples such as ``US,JP,CN`` are common in matrix-like data where the
+    first row may be dimension values rather than authoritative field names.
+    Treating such rows as a high-confidence header makes downstream agents too
+    certain, so callers should mark the header interpretation as ambiguous.
+    """
+    vals = [str(x).strip() for x in row if not is_empty(x)]
+    if len(vals) < 2:
+        return False
+    if any(re.search(r"date|time|year|month|quarter|period|value|amount|country|indicator|series|code|id|name", norm_name(v)) for v in vals):
+        return False
+    code_like = 0
+    for v in vals:
+        token = re.sub(r"[^A-Za-z0-9]", "", v)
+        if 1 <= len(token) <= 4 and token.upper() == token and re.search(r"[A-Z]", token):
+            code_like += 1
+    return code_like / max(len(vals), 1) >= 0.8
+
+
 def header_confidence(first_row: List[str], second_row: Optional[List[str]]) -> Tuple[bool, str]:
     if not first_row:
         return False, "low"
@@ -272,6 +341,8 @@ def header_confidence(first_row: List[str], second_row: Optional[List[str]]) -> 
         second_num = 0
         second_nonempty = 0
     if first_nonempty and first_nonnum / first_nonempty >= 0.7 and second_nonempty and second_num / second_nonempty >= 0.3:
+        if looks_short_code_header_candidate(first_row):
+            return True, "medium"
         return True, "high"
     if first_nonempty and first_nonnum / first_nonempty >= 0.6:
         return True, "medium"
@@ -419,8 +490,13 @@ def profile_csv(path: Path, args) -> Tuple[Dict[str, Any], Dict[str, Any], List[
     else:
         has_header, hconf = header_confidence(rows[0], rows[1] if len(rows) > 1 else None)
         if has_header:
-            header = [c.strip() or f"column_{i+1}" for i, c in enumerate(rows[0])]
+            raw_header = [c.strip() or f"column_{i+1}" for i, c in enumerate(rows[0])]
+            header = make_unique_headers(raw_header)
             data_rows = rows[1:]
+            if hconf == "medium" and looks_short_code_header_candidate(rows[0]):
+                ambiguities.append("The first row may be either a header or a data row with short code-like values; confirm whether it should be treated as column names.")
+            if header != raw_header:
+                warnings.append("Duplicate or blank CSV header names were made unique for stable downstream JSON/profile handling.")
         else:
             maxw = widths.most_common(1)[0][0] if widths else len(rows[0])
             header = [f"column_{i+1}" for i in range(maxw)]
@@ -772,8 +848,6 @@ def guess_shape_type(columns: List[Dict[str, Any]]) -> str:
         return "long_table"
     if date_sem >= 1 and measure_cols >= 1 and cat_cols >= 1:
         return "long_table"
-    if n > 30 and period_cols == 0 and measure_cols / max(n, 1) > 0.6:
-        return "wide_measure_columns"
     return "unknown"
 
 
@@ -869,7 +943,62 @@ def choose_output_policy(args, file_size_bytes: int, profiles: List[Dict[str, An
     return make("full", "Auto policy selected full because the file/table is below size and width thresholds.", 5, 5, True, None, None)
 
 
-def apply_output_policy(profiles: List[Dict[str, Any]], policy: Dict[str, Any]) -> List[str]:
+def column_priority_for_output(col: Dict[str, Any], roles: Optional[Dict[str, Any]] = None) -> int:
+    """Higher priority columns survive compact output-policy truncation."""
+    name = col.get("name")
+    canon = canonical_col_name(name)
+    roles = roles or {}
+    role_names = {canonical_col_name(v) for v in roles.values() if isinstance(v, str) and v}
+    if canon in role_names:
+        return 1000
+    if is_time_period_column_name(str(name)):
+        return 900
+    if canon in {"COUNTRY_ID", "REF_AREA", "INDICATOR_ID", "FREQ", "FREQUENCY_ID", "TIME_PERIOD", "OBS_VALUE", "UNIT_MEASURE", "UNIT_ID", "SCALE_ID", "UNIT_MULT", "OBS_STATUS"}:
+        return 850
+    sem = col.get("semantic_guess")
+    if sem in {"time", "identifier"}:
+        return 700
+    if sem in {"measure", "percentage", "currency"}:
+        return 600
+    if sem == "category":
+        return 500
+    return 0
+
+
+def select_columns_for_output_policy(cols: List[Dict[str, Any]], max_profile_columns: int) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    if len(cols) <= max_profile_columns:
+        return cols, []
+    roles = infer_macro_roles(cols)
+    indexed = list(enumerate(cols))
+    selected_idx = set()
+
+    # Keep highest-priority semantic/domain columns regardless of where they occur.
+    for idx, col in sorted(indexed, key=lambda item: (-column_priority_for_output(item[1], roles), item[0])):
+        if column_priority_for_output(col, roles) <= 0:
+            break
+        selected_idx.add(idx)
+        if len(selected_idx) >= max_profile_columns:
+            break
+
+    # Preserve edge period columns so wide-time tables keep visible coverage hints.
+    period_idx = [idx for idx, col in indexed if is_time_period_column_name(str(col.get("name", "")))]
+    for idx in period_idx[:10] + period_idx[-10:]:
+        if len(selected_idx) >= max_profile_columns:
+            break
+        selected_idx.add(idx)
+
+    # Fill remaining slots in original order for stable, readable artifacts.
+    for idx, _col in indexed:
+        if len(selected_idx) >= max_profile_columns:
+            break
+        selected_idx.add(idx)
+
+    selected = [col for idx, col in indexed if idx in selected_idx]
+    omitted = [col for idx, col in indexed if idx not in selected_idx]
+    return selected, omitted
+
+
+def apply_output_policy(profiles: List[Dict[str, Any]], policy: Dict[str, Any], redact: bool = False) -> List[str]:
     """Reduce JSON artifact size according to the selected output policy."""
     warnings: List[str] = []
     controls = policy.get("controls", {})
@@ -886,12 +1015,12 @@ def apply_output_policy(profiles: List[Dict[str, Any]], policy: Dict[str, Any]) 
         cols = prof.get("columns", [])
         original_cols = len(cols)
         if max_profile_columns is not None and original_cols > max_profile_columns:
-            omitted = cols[max_profile_columns:]
-            prof["columns"] = cols[:max_profile_columns]
-            prof["columns_omitted_by_output_policy"] = original_cols - max_profile_columns
+            selected, omitted = select_columns_for_output_policy(cols, max_profile_columns)
+            prof["columns"] = selected
+            prof["columns_omitted_by_output_policy"] = original_cols - len(selected)
             prof["output_policy_original_column_count"] = original_cols
             prof["omitted_column_names_preview"] = [c.get("name") for c in omitted[:50]]
-            warnings.append(f"Output policy '{level}' retained detailed profiles for first {max_profile_columns} of {original_cols} columns; omitted column names preview is stored in table_profile.json.")
+            warnings.append(f"Output policy '{level}' retained detailed profiles for {len(selected)} of {original_cols} columns, prioritizing inferred role/time/value columns; omitted column names preview is stored in table_profile.json.")
             cols = prof["columns"]
         else:
             prof["columns_omitted_by_output_policy"] = 0
@@ -900,13 +1029,13 @@ def apply_output_policy(profiles: List[Dict[str, Any]], policy: Dict[str, Any]) 
 
         for col in cols:
             if "examples" in col:
-                col["examples"] = [safe_cell(v, max_chars=max_cell_chars_cap or 10_000, redact=False) for v in col.get("examples", [])[:max_examples]]
+                col["examples"] = [safe_cell(v, max_chars=max_cell_chars_cap or 10_000, redact=redact) for v in col.get("examples", [])[:max_examples]]
             if "top_values_sample" in col:
                 new_top = []
                 for item in col.get("top_values_sample", [])[:max_top]:
                     item = dict(item)
                     if "value" in item:
-                        item["value"] = safe_cell(item["value"], max_chars=max_cell_chars_cap or 10_000, redact=False)
+                        item["value"] = safe_cell(item["value"], max_chars=max_cell_chars_cap or 10_000, redact=redact)
                     new_top.append(item)
                 col["top_values_sample"] = new_top
 
@@ -916,8 +1045,8 @@ def apply_output_policy(profiles: List[Dict[str, Any]], policy: Dict[str, Any]) 
         elif max_cell_chars_cap and "samples" in prof:
             samples = prof.get("samples") or {}
             prof["samples"] = {
-                "head_rows": [[safe_cell(v, max_chars=max_cell_chars_cap, redact=False) for v in row] for row in samples.get("head_rows", [])],
-                "representative_rows": [[safe_cell(v, max_chars=max_cell_chars_cap, redact=False) for v in row] for row in samples.get("representative_rows", [])],
+                "head_rows": [[safe_cell(v, max_chars=max_cell_chars_cap, redact=redact) for v in row] for row in samples.get("head_rows", [])],
+                "representative_rows": [[safe_cell(v, max_chars=max_cell_chars_cap, redact=redact) for v in row] for row in samples.get("representative_rows", [])],
             }
 
         prof.setdefault("warnings", [])
@@ -1724,7 +1853,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--full-scan", action="store_true", help="For CSV/TSV, scan the full file for row count and row-width checks; column profiles remain sample-bounded")
     ap.add_argument("--max-cell-chars", type=int, default=120, help="Maximum characters retained per sample/example cell")
     ap.add_argument("--redact-samples", action="store_true", help="Redact email-like, phone-like, and long-number values in examples and sample rows")
-    ap.add_argument("--no-samples", action="store_true", help="Omit row samples from table_profile.json while keeping column-level examples")
+    ap.add_argument("--no-samples", action="store_true", help="Omit row samples and column-level examples/top-values from table_profile.json")
     ap.add_argument("--schema-preset", choices=["none", "generic", "rag", "sql"], default="none", help="Optionally write downstream_schema_hint.json for common downstream workflows")
     ap.add_argument("--domain-full-scan", action="store_true", help="For IMF/SDMX-style wide-time CSVs, stream the file to create domain_indicator_catalog.{json,csv,md} with indicator availability and coverage")
     ap.add_argument("--domain-scan-limit-rows", type=int, default=0, help="Optional row limit for --domain-full-scan; 0 means scan all rows")
@@ -1789,17 +1918,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         ambiguities.append("The file type is not recognized as CSV, TSV, XLSX, or PDF by the reference profiler.")
         features_unavailable.append("format-specific profiling")
 
-    if args.no_samples:
-        for p in profiles:
-            if isinstance(p, dict) and "samples" in p:
-                p["samples"] = {"head_rows": [], "representative_rows": []}
-
-    # Build domain locator before adaptive output reduction so row samples are still available.
+    # Build domain locator before sample stripping and adaptive output reduction so
+    # row samples remain available for role/key inference.
     pre_policy_profile_doc = {"schema_version": "1.0", "source_file": str(path.resolve()), "profiles": json.loads(json.dumps(profiles, ensure_ascii=False))}
-    data_locator, locator_warnings = build_data_locator(path, {}, pre_policy_profile_doc, args)
+    pre_manifest = {"schema_version": "1.0", "source_file": str(path.resolve()), "file_type": ftype, "tables": tables}
+    data_locator, locator_warnings = build_data_locator(path, pre_manifest, pre_policy_profile_doc, args)
+
+    if args.no_samples:
+        strip_column_value_samples(profiles)
+        strip_locator_value_samples(data_locator)
+        file_warnings.append("--no-samples removed row-level samples, column-level examples/top-values, and sample-derived locator values from generated artifacts.")
 
     output_policy = choose_output_policy(args, path.stat().st_size, profiles)
-    policy_warnings = apply_output_policy(profiles, output_policy)
+    policy_warnings = apply_output_policy(profiles, output_policy, redact=args.redact_samples)
     file_warnings.extend(policy_warnings)
     if output_policy.get("policy") in {"compact", "very-compact"}:
         ambiguities.append("JSON output detail was intentionally reduced by the adaptive output policy. Use --output-policy full if complete profiling artifacts are required and storage/context size is acceptable.")
@@ -1810,6 +1941,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         t["columns_omitted_by_output_policy"] = p_for_t.get("columns_omitted_by_output_policy", 0)
         if p_for_t.get("omitted_column_names_preview"):
             t["omitted_column_names_preview"] = p_for_t.get("omitted_column_names_preview")
+
+    profiling_success = bool(tables and profiles)
+    if profiling_success:
+        understanding_quality = "well understood" if capability != "limited" and not any("Header row could not" in x for x in ambiguities) else "partially understood"
+    else:
+        understanding_quality = "not well understood"
+        file_warnings.append("No table/profile could be produced; inspect warnings before treating this run as successful.")
 
     manifest = {
         "schema_version": "1.0",
@@ -1823,6 +1961,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         "mode": mode,
         "capability_level": capability,
         "output_control": output_policy,
+        "profiling_success": profiling_success,
+        "understanding_quality": understanding_quality,
         "features_available": features_available,
         "features_unavailable": features_unavailable,
         "warnings": sorted(set(file_warnings)),
@@ -1855,6 +1995,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         "output_dir": str(args.out.resolve()),
         "file_type": ftype,
         "tables_detected": len(tables),
+        "profiling_success": profiling_success,
+        "understanding_quality": understanding_quality,
         "mode": mode,
         "capability_level": capability,
         "output_control": output_policy,

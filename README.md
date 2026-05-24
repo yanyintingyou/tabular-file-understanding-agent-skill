@@ -68,6 +68,21 @@ python tests/test_profile_examples.py
 
 These examples intentionally mirror the shapes that often break naive LLM table-reading workflows: simple FRED time series, IMF BOP/PIP wide time columns, EPU wide measure columns, and World Bank-style report worksheets.
 
+### Example output snapshot
+
+Profiling `examples/wide_time_imf_mock.csv` with `--domain-preset imf-bop` produces a locator like:
+
+```text
+value_layout: wide_time_columns
+column_roles.scale_column: SCALE.ID
+column_roles.value_column: null
+wide_time_value_columns: 1997, 1998, 1999, 2024-Q1, 2024-Q2, ...
+required_preprocessing: reshape_wide_time_columns_to_long
+recommended_key: COUNTRY.ID × INDICATOR.ID × COUNTERPART_COUNTRY.ID × FREQUENCY.ID × <time_period_column>
+```
+
+The full generated artifacts are intentionally not committed for every test run because they include timestamps and local paths. Run `python tests/test_profile_examples.py` or the quick-start command below to regenerate them locally.
+
 ---
 
 ## What it can understand by default
@@ -156,6 +171,18 @@ Year × Month × series_or_country → value
 | Other files | Limited | Reports unsupported/unknown format clearly |
 
 The bundled reference profiler uses **only the Python standard library**. Optional libraries may be used by an agent for deeper inspection, but the core workflow does not require them.
+
+### Excel and PDF limits
+
+The standard-library Excel reader is intentionally conservative:
+
+- `.xlsx` / `.xlsm` only; old binary `.xls` is not supported by the core script.
+- Formula and macro contents are never executed.
+- Excel style-based dates may appear as raw serial numbers because the core script does not implement the full Excel style engine.
+- Merged cells, hidden sheets, data validation, charts, and conditional formatting are treated as structural hints at most, not reconstructed as Excel would display them.
+- Complex multi-header workbooks may still need manual confirmation or an optional parser such as `openpyxl` in a downstream workflow.
+
+PDF support is metadata-first. The core script counts coarse file/page signals and must not be treated as authoritative PDF table extraction or OCR.
 
 ---
 
@@ -334,7 +361,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --redact-samples
 ```
 
-For stricter schema-only profiling without row samples:
+For stricter schema-only profiling without row or column value samples:
 
 ```bash
 python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
@@ -342,6 +369,8 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --out ./tabular-profile \
   --no-samples
 ```
+
+`--no-samples` removes `samples.head_rows`, `samples.representative_rows`, `columns[].examples`, and `columns[].top_values_sample` from `table_profile.json`. It also suppresses sample-derived locator indexes, frequency samples, key checks, and per-period value summaries in `data_locator_spec.json` / `data_locator_guide.md`. Column names, inferred types, structural warnings, and locator column-role metadata remain because they are needed for schema understanding.
 
 You can also limit retained cell length:
 
@@ -444,7 +473,25 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --out ./tabular-profile
 ```
 
-For Agent Skills-compatible systems, copy or reference:
+### Install as a Hermes skill
+
+This repository is a skill collection: the actual skill directory is:
+
+```text
+skills/tabular-file-understanding/
+```
+
+For a local Hermes setup, copy or symlink that directory into your Hermes skills directory, for example:
+
+```bash
+mkdir -p ~/.hermes/skills/data-science
+ln -sfn "$PWD/skills/tabular-file-understanding" \
+  ~/.hermes/skills/data-science/tabular-file-understanding
+```
+
+If your Hermes version supports skill taps/install commands, install the repository as a tap and select `tabular-file-understanding`; otherwise the symlink/copy method above is the most transparent option.
+
+For other Agent Skills-compatible systems, copy or reference:
 
 ```text
 skills/tabular-file-understanding/

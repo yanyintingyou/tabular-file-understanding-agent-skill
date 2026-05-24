@@ -68,6 +68,21 @@ python tests/test_profile_examples.py
 
 这些示例专门模拟容易让普通 LLM 表格读取流程出错的结构：FRED 简单时间序列、IMF BOP/PIP 宽时间列、EPU 宽指标列、World Bank 报告式 worksheet。
 
+### 示例输出片段
+
+对 `examples/wide_time_imf_mock.csv` 使用 `--domain-preset imf-bop` 后，会生成类似 locator：
+
+```text
+value_layout: wide_time_columns
+column_roles.scale_column: SCALE.ID
+column_roles.value_column: null
+wide_time_value_columns: 1997, 1998, 1999, 2024-Q1, 2024-Q2, ...
+required_preprocessing: reshape_wide_time_columns_to_long
+recommended_key: COUNTRY.ID × INDICATOR.ID × COUNTERPART_COUNTRY.ID × FREQUENCY.ID × <time_period_column>
+```
+
+完整输出产物没有逐次提交到仓库，因为其中包含时间戳和本地路径。可以运行 `python tests/test_profile_examples.py` 或下方 quick-start 命令在本地重新生成。
+
 ---
 
 ## 默认能够理解哪些表格？
@@ -156,6 +171,18 @@ Year × Month × series_or_country → value
 | 其他文件 | 有限 | 明确报告未知或不支持的格式 |
 
 内置参考 profiler **只使用 Python 标准库**。agent 可以在需要时使用可选库做更深检查，但核心工作流不依赖它们。
+
+### Excel 和 PDF 限制
+
+标准库 Excel 读取器是保守实现：
+
+- 仅支持 `.xlsx` / `.xlsm`；核心脚本不支持旧二进制 `.xls`。
+- 永不执行公式、宏或外部链接。
+- Excel 样式驱动的日期可能显示为原始序列号，因为核心脚本不实现完整 Excel 样式引擎。
+- merged cells、hidden sheets、数据验证、图表、条件格式最多作为结构线索，不会按 Excel UI 完整重建。
+- 复杂多级表头 workbook 仍可能需要人工确认，或在下游流程里使用 `openpyxl` 等可选解析器。
+
+PDF 默认只做元数据优先检查。核心脚本只能统计粗粒度文件/page 信号，不能当作权威 PDF 表格抽取或 OCR。
 
 ---
 
@@ -334,7 +361,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --redact-samples
 ```
 
-如果希望不写入任何行级样本：
+如果希望不写入行级样本和列级取值样本：
 
 ```bash
 python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
@@ -342,6 +369,8 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --out ./tabular-profile \
   --no-samples
 ```
+
+`--no-samples` 会从 `table_profile.json` 中移除 `samples.head_rows`、`samples.representative_rows`、`columns[].examples` 和 `columns[].top_values_sample`。它还会在 `data_locator_spec.json` / `data_locator_guide.md` 中抑制由样本行派生的 locator 索引、频率样本、key 检查和各时期取值摘要。字段名、推断类型、结构警告和 locator 字段角色元数据仍会保留，因为这些是理解 schema 所必需的。
 
 也可以限制单元格保留长度：
 
@@ -444,7 +473,25 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
   --out ./tabular-profile
 ```
 
-对兼容 Agent Skills 的系统，可以复制或引用：
+### 作为 Hermes skill 安装
+
+这个仓库是一个 skill collection，真正的 skill 目录是：
+
+```text
+skills/tabular-file-understanding/
+```
+
+对于本地 Hermes，可以把该目录复制或软链接到 Hermes skills 目录，例如：
+
+```bash
+mkdir -p ~/.hermes/skills/data-science
+ln -sfn "$PWD/skills/tabular-file-understanding" \
+  ~/.hermes/skills/data-science/tabular-file-understanding
+```
+
+如果你的 Hermes 版本支持 skill tap / install 命令，可以把本仓库作为 tap 安装后选择 `tabular-file-understanding`；否则，上面的软链接/复制方式最透明。
+
+对于其他兼容 Agent Skills 的系统，复制或引用：
 
 ```text
 skills/tabular-file-understanding/

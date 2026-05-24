@@ -43,6 +43,22 @@ def run_profiler(example_name: str, *extra_args: str) -> tuple[dict, dict, dict,
         raise
 
 
+def run_profiler_on_path(source: Path, *extra_args: str) -> tuple[dict, dict, dict, Path]:
+    """Run the profiler on an arbitrary file path and return manifest/profile/locator."""
+    out = Path(tempfile.mkdtemp(prefix=f"tfu-{source.stem}-"))
+    cmd = [sys.executable, str(SCRIPT), "--input", str(source), "--out", str(out), *extra_args]
+    try:
+        subprocess.run(cmd, cwd=str(ROOT), check=True, text=True, capture_output=True)
+        manifest = json.loads((out / "table_manifest.json").read_text(encoding="utf-8"))
+        profile = json.loads((out / "table_profile.json").read_text(encoding="utf-8"))
+        locator = json.loads((out / "data_locator_spec.json").read_text(encoding="utf-8"))
+        return manifest, profile, locator, out
+    except subprocess.CalledProcessError as exc:
+        print(exc.stdout)
+        print(exc.stderr, file=sys.stderr)
+        raise
+
+
 def cleanup(out: Path) -> None:
     shutil.rmtree(out, ignore_errors=True)
 
@@ -122,6 +138,82 @@ def test_worldbank_report_style_header_detection() -> None:
     finally:
         cleanup(out)
 
+def test_no_samples_removes_row_and_column_value_samples() -> None:
+    manifest, profile, locator, out = run_profiler("simple_fred.csv", "--no-samples")
+    try:
+        prof = first_profile(profile)
+        assert prof["samples"] == {"head_rows": [], "representative_rows": []}
+        for col in prof["columns"]:
+            assert col.get("examples", []) == []
+            assert col.get("top_values_sample", []) == []
+        assert locator["sample_values_suppressed"] is True
+        assert locator["indicator_index"]["top_values"] == []
+        assert locator["entity_index"]["top_values"] == []
+        assert manifest["profiling_options"]["no_samples"] is True
+    finally:
+        cleanup(out)
+
+
+def test_csv_duplicate_headers_are_made_unique() -> None:
+    with tempfile.TemporaryDirectory(prefix="tfu-dup-") as td:
+        source = Path(td) / "duplicate_headers.csv"
+        source.write_text("id,value,value\n1,10,100\n2,20,200\n", encoding="utf-8")
+        manifest, profile, locator, out = run_profiler_on_path(source)
+        try:
+            names = [c["name"] for c in first_profile(profile)["columns"]]
+            assert names == ["id", "value", "value_2"]
+        finally:
+            cleanup(out)
+
+
+def test_short_code_header_candidate_is_marked_ambiguous() -> None:
+    with tempfile.TemporaryDirectory(prefix="tfu-header-") as td:
+        source = Path(td) / "code_matrix.csv"
+        source.write_text("US,JP,CN\n1.1,2.2,3.3\n4.4,5.5,6.6\n", encoding="utf-8")
+        manifest, profile, locator, out = run_profiler_on_path(source)
+        try:
+            structure = first_profile(profile)["structure_guess"]
+            ambiguities = (out / "ambiguities.md").read_text(encoding="utf-8").lower()
+            assert structure["header_confidence"] == "medium"
+            assert "first row may be either a header or a data row" in ambiguities
+        finally:
+            cleanup(out)
+
+
+def test_invalid_xlsx_reports_not_well_understood() -> None:
+    with tempfile.TemporaryDirectory(prefix="tfu-badxlsx-") as td:
+        source = Path(td) / "bad.xlsx"
+        import zipfile
+        with zipfile.ZipFile(source, "w") as zf:
+            zf.writestr("not_a_workbook.txt", "hello")
+        manifest, profile, locator, out = run_profiler_on_path(source)
+        try:
+            assert manifest["tables"] == []
+            assert manifest["understanding_quality"] == "not well understood"
+            assert manifest["profiling_success"] is False
+        finally:
+            cleanup(out)
+
+
+def test_compact_policy_preserves_semantic_columns_at_tail() -> None:
+    with tempfile.TemporaryDirectory(prefix="tfu-wide-") as td:
+        source = Path(td) / "wide_tail_roles.csv"
+        filler = [f"c{i}" for i in range(1, 1006)]
+        header = filler + ["COUNTRY.ID", "TIME_PERIOD", "OBS_VALUE"]
+        row = ["" for _ in filler] + ["US", "2024", "123.4"]
+        source.write_text(",".join(header) + "\n" + ",".join(row) + "\n", encoding="utf-8")
+        manifest, profile, locator, out = run_profiler_on_path(
+            source,
+            "--output-policy", "compact",
+            "--compact-max-profile-columns", "1000",
+        )
+        try:
+            names = {c["name"] for c in first_profile(profile)["columns"]}
+            assert {"COUNTRY.ID", "TIME_PERIOD", "OBS_VALUE"}.issubset(names)
+            assert first_profile(profile)["columns_omitted_by_output_policy"] == 8
+        finally:
+            cleanup(out)
+
 
 def main() -> int:
     tests = [
@@ -129,6 +221,11 @@ def main() -> int:
         test_imf_wide_time_columns_do_not_use_scale_as_value,
         test_epu_year_month_are_keys_not_value_columns,
         test_worldbank_report_style_header_detection,
+        test_no_samples_removes_row_and_column_value_samples,
+        test_csv_duplicate_headers_are_made_unique,
+        test_short_code_header_candidate_is_marked_ambiguous,
+        test_invalid_xlsx_reports_not_well_understood,
+        test_compact_policy_preserves_semantic_columns_at_tail,
     ]
     failed = 0
     for test in tests:

@@ -9,7 +9,7 @@ This skill is designed to understand table structure, not to expose raw data.
 - Truncate long cell values.
 - Do not print raw datasets into chat.
 - Use `--redact-samples` when files may contain personal, financial, customer, employee, or confidential data.
-- Use `--no-samples` when even small row samples should not be written to profiling artifacts.
+- Use `--no-samples` when even small row samples and column-level value examples/top-values should not be written to profiling artifacts.
 
 Example:
 
@@ -36,7 +36,7 @@ Agents must not execute spreadsheet macros, external links, embedded scripts, or
 
 ## Limitations of Redaction
 
-The bundled redaction is deliberately lightweight and pattern-based. It catches common email-like, phone-like, and long-number values in samples. It is not a complete data-loss-prevention system. For highly sensitive files, prefer `--no-samples` and inspect only schema-level outputs.
+The bundled redaction is deliberately lightweight and pattern-based. It catches common email-like, phone-like, and long-number values in samples. It is not a complete data-loss-prevention system. For highly sensitive files, prefer `--no-samples`; this removes row-level samples and column-level value examples/top-values and suppresses sample-derived locator values, but still retains structural metadata such as column names and inferred types.
 
 ## Redacted Numeric Summaries
 

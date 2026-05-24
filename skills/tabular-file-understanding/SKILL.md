@@ -3,7 +3,7 @@ name: tabular-file-understanding
 description: Extracts structure, schemas, samples, and warnings from large CSV, Excel, and PDF table files using Python-only profiling. Use before asking an LLM to reason about tabular files.
 license: MIT
 compatibility: Python 3.9+. Bundled profiler uses only the Python standard library. Compatible with Agent Skills, Claude Code, OpenClaw, Codex via AGENTS.md, and Cursor via rules.
-metadata: {"author":"yanyintingyou","homepage":"https://github.com/yanyintingyou","version":"1.1.0","category":"data-understanding","tags":"csv,xlsx,pdf,spreadsheet,table,profiling,llm-context"}
+metadata: {"author":"yanyintingyou","homepage":"https://github.com/yanyintingyou","version":"1.1.1","category":"data-understanding","tags":"csv,xlsx,pdf,spreadsheet,table,profiling,llm-context"}
 ---
 
 # Tabular File Understanding
@@ -70,7 +70,7 @@ Do not use this skill for:
    ```
 
 4. **Let adaptive output control protect storage/context size.** By default, `--output-policy auto` keeps full JSON detail for small files, reduces examples for medium files, omits row samples for large files, and limits detailed column profiles for very large or extremely wide tables. Override with `--output-policy full|balanced|compact|very-compact` only when needed.
-5. **For sensitive files, protect samples.** Use `--redact-samples` for lightweight masking or `--no-samples` when row-level examples should not be written.
+5. **For sensitive files, protect samples.** Use `--redact-samples` for lightweight masking or `--no-samples` when row-level samples and column-level value examples/top-values should not be written.
 6. **Apply the profiler flexibly rather than mechanically.** Real-world tables are open-ended; the known patterns are heuristics, not a closed taxonomy. If the profiler's `shape_type`, `value_column`, `recommended_key`, or primary-table guess conflicts with sampled evidence, treat the profiler output as a hypothesis, inspect a small bounded slice, override the interpretation in your report, and improve the heuristic when the fix is durable.
 7. **Read only the compact outputs:**
    - `table_digest.md`
@@ -242,10 +242,10 @@ See `references/dependency-policy.md`.
 - Do not overwrite the original file.
 - Write outputs to a separate directory.
 - Do not print large samples or raw datasets into chat.
-- Avoid exposing sensitive row-level data unless the user asks for samples.
+- Avoid exposing sensitive row-level or column-level sample values unless the user asks for samples.
 - Make clear when statistics are sample-based rather than complete.
 - Make clear when adaptive output control reduced `table_profile.json`.
-- Use `--redact-samples` or `--no-samples` for sensitive files.
+- Use `--redact-samples` or `--no-samples` for sensitive files. `--no-samples` removes row samples and column-level `examples` / `top_values_sample`, and suppresses sample-derived locator indexes/frequency samples/key checks/value summaries, but it is still structural profiling, not a full DLP system.
 
 ## Interpretation Rules
 
@@ -265,7 +265,7 @@ Do not infer business meaning beyond what column names, sample values, and file 
 - Locator indexes are sample-based unless the workflow is extended with a full domain scan; rare indicators/entities may be absent from the displayed top values.
 - Complex structures such as multi-header spreadsheets, cross-tab matrices, nested JSON/XML, hierarchical SDMX dimensions, pivoted time columns, ragged report layouts, multi-table PDFs, merged-cell workbooks, and formula-driven Excel models may require custom parsing beyond this skill.
 - CSV `--full-scan` gives a more complete row count and row-width check; column profiles remain bounded by sampled rows unless an agent writes an enhanced Python backend.
-- `.xlsx` support is XML-based and does not calculate formulas, evaluate macros, or fully reconstruct complex Excel UI state.
+- `.xlsx` support is XML-based and does not calculate formulas, evaluate macros, parse old `.xls`, resolve Excel style-based date serials, or fully reconstruct complex Excel UI state.
 - PDF support is metadata-first unless the user provides extracted tables or approves optional Python PDF libraries.
 - Pattern-based sample redaction is not a complete DLP system. For highly sensitive files, use `--no-samples`.
 - Adaptive output control reduces generated JSON artifacts only; it never modifies the original data file.
