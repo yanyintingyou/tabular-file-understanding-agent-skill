@@ -408,8 +408,8 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 
 ```text
 .
-├── AGENTS.md
-├── CLAUDE.md
+├── agent instruction file
+├── Claude-compatible instruction file
 ├── LICENSE
 ├── README.md
 ├── README.zh-CN.md
@@ -450,9 +450,9 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 这个仓库设计为兼容多个 agent 生态：
 
 - Agent Skills / Hermes / OpenClaw：使用 `skills/tabular-file-understanding/SKILL.md`。
-- OpenAI Codex 兼容 agent：使用 `AGENTS.md`。
-- Claude Code 兼容 agent：使用 `CLAUDE.md`。
-- Cursor：使用 `.cursor/rules/tabular-file-understanding.mdc`。
+- OpenAI Codex 兼容 agent：使用 `agent instruction file`。
+- Claude Code 兼容 agent：使用 `Claude-compatible instruction file`。
+- Cursor：使用 `IDE rule adapter directory/tabular-file-understanding.mdc`。
 
 ---
 

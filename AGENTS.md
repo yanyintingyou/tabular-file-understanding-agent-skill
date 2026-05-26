@@ -1,4 +1,4 @@
-# AGENTS.md — Tabular File Understanding
+# agent instruction file — Tabular File Understanding
 
 This repository contains a portable agent skill at:
 

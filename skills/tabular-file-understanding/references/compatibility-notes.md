@@ -44,24 +44,24 @@ This skill avoids platform-specific required frontmatter and uses a simple metad
 
 ## OpenAI Codex
 
-Codex uses `AGENTS.md` files for persistent project instructions. Codex documentation describes discovery from global and project scopes and notes that skills may live globally or in `.agents/skills` depending on Codex configuration.
+Codex uses agent instruction files for persistent project instructions. Codex documentation describes discovery from global and project scopes and notes that skills may live globally or in `.agents/skills` depending on Codex configuration.
 
 Original documentation:
 
 - https://developers.openai.com/codex/guides/agents-md
 - https://developers.openai.com/codex/concepts/customization
 
-This package includes a root `AGENTS.md` that points Codex-compatible agents to the bundled `SKILL.md` and Python script.
+This package includes a root `agent instruction file` that points Codex-compatible agents to the bundled `SKILL.md` and Python script.
 
 ## Cursor
 
-Cursor uses persistent rules in `.cursor/rules/`. Rules can be always applied, auto-attached by glob, agent-decided via description, or manually referenced. Cursor also supports `AGENTS.md` as a simpler project-level instruction file.
+Cursor uses persistent rules in `IDE rule adapter directory`. Rules can be always applied, auto-attached by glob, agent-decided via description, or manually referenced. Cursor also supports `agent instruction file` as a simpler project-level instruction file.
 
 Original documentation:
 
 - https://cursor.com/help/customization/rules
 
-This package includes `.cursor/rules/tabular-file-understanding.mdc` as an agent-decided rule with relevant file globs.
+This package includes `IDE rule adapter directory/tabular-file-understanding.mdc` as an agent-decided rule with relevant file globs.
 
 ## Portability Choices
 
@@ -70,4 +70,4 @@ This package includes `.cursor/rules/tabular-file-understanding.mdc` as an agent
 - No automatic dependency installation.
 - No platform-specific command-line tools.
 - Canonical outputs in JSON and Markdown.
-- Root `AGENTS.md` and Cursor rule adapters for agents that do not natively load `SKILL.md`.
+- Root agent instruction files and Cursor rule adapters for agents that do not natively load `SKILL.md`.

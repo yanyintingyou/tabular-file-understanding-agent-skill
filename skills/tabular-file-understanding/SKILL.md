@@ -2,7 +2,7 @@
 name: tabular-file-understanding
 description: Extracts structure, schemas, samples, and warnings from large CSV, Excel, and PDF table files using Python-only profiling. Use before asking an LLM to reason about tabular files.
 license: MIT
-compatibility: Python 3.9+. Bundled profiler uses only the Python standard library. Compatible with Agent Skills, Claude Code, OpenClaw, Codex via AGENTS.md, and Cursor via rules.
+compatibility: Python 3.9+. Bundled profiler uses only the Python standard library. Compatible with Agent Skills, Claude Code, OpenClaw, Codex via agent instruction file, and Cursor via rules.
 metadata: {"author":"yanyintingyou","homepage":"https://github.com/yanyintingyou","version":"1.1.1","category":"data-understanding","tags":"csv,xlsx,pdf,spreadsheet,table,profiling,llm-context"}
 ---
 

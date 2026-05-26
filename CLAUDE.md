@@ -1,4 +1,4 @@
-# CLAUDE.md — Tabular File Understanding
+# Claude-compatible instruction file — Tabular File Understanding
 
 This repository contains an Agent Skills-compatible skill at:
 

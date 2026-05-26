@@ -408,8 +408,8 @@ Available presets:
 
 ```text
 .
-├── AGENTS.md
-├── CLAUDE.md
+├── agent instruction file
+├── Claude-compatible instruction file
 ├── LICENSE
 ├── README.md
 ├── README.zh-CN.md
@@ -450,9 +450,9 @@ Available presets:
 This repository is designed to work across multiple agent ecosystems:
 
 - Agent Skills / Hermes / OpenClaw: use `skills/tabular-file-understanding/SKILL.md`.
-- OpenAI Codex-compatible agents: use `AGENTS.md`.
-- Claude Code-compatible agents: use `CLAUDE.md`.
-- Cursor: use `.cursor/rules/tabular-file-understanding.mdc`.
+- OpenAI Codex-compatible agents: use `agent instruction file`.
+- Claude Code-compatible agents: use `Claude-compatible instruction file`.
+- Cursor: use `IDE rule adapter directory/tabular-file-understanding.mdc`.
 
 ---
 
