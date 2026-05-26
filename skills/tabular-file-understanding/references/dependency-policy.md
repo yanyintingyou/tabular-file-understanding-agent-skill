@@ -41,7 +41,7 @@ If the user asks for better profiling quality, recommend an isolated environment
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install pandas openpyxl duckdb pyarrow charset-normalizer
+python -m pip install -r requirements.txt
 ```
 
 Windows PowerShell:
@@ -49,7 +49,7 @@ Windows PowerShell:
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install pandas openpyxl duckdb pyarrow charset-normalizer
+python -m pip install -r requirements.txt
 ```
 
 Do not put installation commands into the default workflow. Treat installation as an explicit user-authorized upgrade path.
