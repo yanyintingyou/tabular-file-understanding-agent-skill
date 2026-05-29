@@ -4,7 +4,7 @@ Use this checklist before publishing or after modifying the skill.
 
 ## Skill Structure
 
-- [ ] `skills/tabular-file-understanding/SKILL.md` exists.
+- [ ] `skills/data-science/tabular-file-understanding/SKILL.md` exists.
 - [ ] The `name` field is `tabular-file-understanding` and matches the directory name.
 - [ ] The description explains both what the skill does and when to use it.
 - [ ] Supporting details are in `references/` rather than bloating `SKILL.md`.
@@ -13,14 +13,14 @@ Use this checklist before publishing or after modifying the skill.
 ## Python Script Smoke Tests
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
 ```
 
 Create and profile a tiny CSV:
 
 ```bash
 printf 'country,date,flow\nUS,2024-01-01,1.2\nCN,2024-01-02,3.4\n' > /tmp/tfu-smoke.csv
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input /tmp/tfu-smoke.csv \
   --out /tmp/tfu-smoke-profile
 ls /tmp/tfu-smoke-profile/table_manifest.json \
@@ -42,7 +42,7 @@ ls /tmp/tfu-smoke-profile/table_manifest.json \
 
 ```bash
 printf 'email,phone,value\na@example.com,+1 555 123 4567,42\n' > /tmp/tfu-sensitive.csv
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input /tmp/tfu-sensitive.csv \
   --out /tmp/tfu-sensitive-profile \
   --redact-samples
@@ -54,7 +54,7 @@ Check that sample/example values are redacted in JSON/Markdown outputs where app
 ## Adaptive Output Policy Test
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input /tmp/tfu-smoke.csv \
   --out /tmp/tfu-compact-profile \
   --output-policy compact

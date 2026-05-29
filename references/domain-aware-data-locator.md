@@ -38,7 +38,7 @@ These are heuristics. For official SDMX datasets, the DSD and codelists are auth
 Optional mapping CSVs can be supplied:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./profile \
   --domain-preset imf-bop \

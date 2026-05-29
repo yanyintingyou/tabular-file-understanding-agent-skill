@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tabular File Understanding Agent Skill"
+  short_description: "AgentSkills-compatible skill: tabular-file-understanding"
+  default_prompt: "Use $tabular-file-understanding and follow SKILL.md."

@@ -5,3 +5,9 @@ __pycache__/
 .venv/
 tabular-profile/
 *_profile/
+.env.*
+!.env.example
+node_modules/
+venv/
+dist/
+build/

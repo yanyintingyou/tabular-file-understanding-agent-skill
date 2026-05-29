@@ -20,7 +20,7 @@ jobs:
       - name: Syntax check
         run: |
           python -m py_compile \
-            skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+            skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
             tests/test_profile_examples.py
       - name: Regression tests
         run: python tests/test_profile_examples.py

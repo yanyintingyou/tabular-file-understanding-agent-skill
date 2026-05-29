@@ -1,9 +1,11 @@
 ---
 name: tabular-file-understanding
 description: Extracts structure, schemas, samples, and warnings from large CSV, Excel, and PDF table files using Python-only profiling. Use before asking an LLM to reason about tabular files.
+version: 1.0.0
+author: yanyintingyou
 license: MIT
-compatibility: Python 3.9+. Bundled profiler uses only the Python standard library. Compatible with Agent Skills, Claude Code, OpenClaw, Codex via agent instruction file, and Cursor via rules.
-metadata: {"author":"yanyintingyou","homepage":"https://github.com/yanyintingyou","version":"1.1.1","category":"data-understanding","tags":"csv,xlsx,pdf,spreadsheet,table,profiling,llm-context"}
+platforms: [linux, macos, windows]
+metadata: {"hermes":{"category":"data-science","tags":["csv","xlsx","pdf","spreadsheet","table","profiling","llm-context"],"related_skills":["tabular-file-understanding"]},"openclaw":{"homepage":"https://github.com/yanyintingyou/tabular-file-understanding-agent-skill"},"compatibility":{"agents":["Hermes Agent","Claude Code","OpenAI Codex","OpenClaw","generic AgentSkills loaders"]}}
 ---
 
 # Tabular File Understanding
@@ -30,7 +32,7 @@ Never paste a large table directly into the model context. Use Python to inspect
 Use Python only. Do not require external command-line tools such as DuckDB CLI, LibreOffice, Java, Ghostscript, `xlsx2csv`, `tabula`, shell pipelines, or database servers. If the host agent exposes a shell-like tool, use it only to run Python, for example:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --input /path/to/file.csv --out /path/to/output
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --input /path/to/file.csv --out /path/to/output
 ```
 
 The bundled reference script uses only the Python standard library. Agents may write additional Python code if needed, but should preserve the same output contract. For sensitive files, run with `--redact-samples` or `--no-samples`. If a downstream workflow needs a routing hint, add `--schema-preset generic`, `--schema-preset rag`, or `--schema-preset sql`. For macroeconomic or SDMX-style time-series files, use `--domain-preset auto|macro-timeseries|sdmx|imf-bop` and optional `--indicator-mapping` / `--entity-mapping` CSV codelists to generate a data locator.

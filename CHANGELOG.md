@@ -24,7 +24,7 @@ All notable changes to this project are documented here.
 ## 1.1.0 — Initial public release
 
 - Python-standard-library profiler for CSV/TSV, `.xlsx`/`.xlsm`, and metadata-first PDF profiling.
-- Agent Skills-compatible layout under `skills/tabular-file-understanding/`.
+- Agent Skills-compatible layout under `skills/data-science/tabular-file-understanding/`.
 - Domain-aware locator for macro/SDMX/IMF BOP-like files.
 - Adaptive output policies for large and wide files.
 - Synthetic examples and regression tests for FRED, IMF wide-time, EPU wide-measure, and World Bank report-style layouts.

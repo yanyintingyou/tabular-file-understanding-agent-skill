@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "skills" / "tabular-file-understanding" / "scripts" / "profile_tabular_file.py"
+SCRIPT = ROOT / "skills" / "data-science" / "tabular-file-understanding" / "scripts" / "profile_tabular_file.py"
 EXAMPLES = ROOT / "examples"
 
 

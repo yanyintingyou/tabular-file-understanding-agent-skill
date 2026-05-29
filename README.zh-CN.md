@@ -18,6 +18,30 @@
 
 ---
 
+
+## 跨 Agent 兼容结构与安装
+
+本仓库现在使用双布局 skill 结构：
+
+```text
+repo/
+├── SKILL.md                                      # 跨 Agent 通用的权威说明
+├── AGENTS.md                                    # Codex / OpenAI 项目指令
+├── CLAUDE.md                                    # Claude Code 项目指令
+├── agents/openai.yaml                           # 可选 OpenAI agent 元数据
+└── skills/data-science/tabular-file-understanding/SKILL.md  # Hermes / OpenClaw 打包版 skill
+```
+
+根目录 `SKILL.md` 与 `skills/data-science/tabular-file-understanding/SKILL.md` 会保持字节级一致。若有脚本、参考文档或依赖文件，它们也会同时出现在两个可安装位置旁边。
+
+### 作为可复用 skill 安装
+
+- **Claude Code**：复制 `skills/data-science/tabular-file-understanding/` 到 `~/.claude/skills/data-science/tabular-file-understanding/`。
+- **OpenAI Codex / OpenAI agents**：在本仓库工作时保留 `AGENTS.md`；如需作为可复用 skill，复制 `skills/data-science/tabular-file-understanding/` 到 `~/.agents/skills/data-science/tabular-file-understanding/`。
+- **OpenClaw**：复制 `skills/data-science/tabular-file-understanding/` 到 `<workspace>/skills/data-science/tabular-file-understanding/`、`<workspace>/.agents/skills/data-science/tabular-file-understanding/` 或 `~/.openclaw/skills/data-science/tabular-file-understanding/`。
+- **Hermes Agent**：复制 `skills/data-science/tabular-file-understanding/` 到 `~/.hermes/skills/data-science/tabular-file-understanding/`，然后开启新的 Hermes 会话。
+- **通用 AgentSkills 加载器**：使用包含 `SKILL.md` 的目录；skill 名称为 `tabular-file-understanding`。
+
 ## 这是什么？
 
 `tabular-file-understanding` 是一个兼容 Agent Skills 结构的工具型 skill，专门解决数据工作里最容易出错的第一步：先弄清楚一个表格文件到底是什么结构。
@@ -225,13 +249,13 @@ domain_indicator_catalog.md
 检查可选依赖情况：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
 ```
 
 分析一个文件：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile
 ```
@@ -247,7 +271,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 如果想对 CSV 做更完整但更慢的扫描：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --full-scan
@@ -270,7 +294,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 IMF BOP 类文件示例：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./tabular-profile \
   --domain-preset imf-bop
@@ -287,7 +311,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 如果本地有 codelist，可以额外传入映射文件：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./tabular-profile \
   --domain-preset sdmx \
@@ -302,7 +326,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 如果目标是判断超大 IMF BOP/PIP 文件中有哪些变量/指标可用，可以增加 `--domain-full-scan`：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./bop-profile \
   --domain-preset imf-bop \
@@ -342,7 +366,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 手动覆盖示例：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --output-policy compact
@@ -355,7 +379,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 如果文件可能包含敏感信息，可以使用轻量样本脱敏：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --redact-samples
@@ -364,7 +388,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 如果希望不写入行级样本和列级取值样本：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --no-samples
@@ -375,7 +399,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 也可以限制单元格保留长度：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --redact-samples \
@@ -389,7 +413,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 这个 skill 的边界是“结构理解”，但它可以为后续工作流生成一个小型提示文件：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --schema-preset generic
@@ -408,8 +432,8 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 
 ```text
 .
-├── agent instruction file
-├── Claude-compatible instruction file
+├── AGENTS.md
+├── CLAUDE.md
 ├── LICENSE
 ├── README.md
 ├── README.zh-CN.md
@@ -449,9 +473,9 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 
 这个仓库设计为兼容多个 agent 生态：
 
-- Agent Skills / Hermes / OpenClaw：使用 `skills/tabular-file-understanding/SKILL.md`。
-- OpenAI Codex 兼容 agent：使用 `agent instruction file`。
-- Claude Code 兼容 agent：使用 `Claude-compatible instruction file`。
+- Agent Skills / Hermes / OpenClaw：使用 `skills/data-science/tabular-file-understanding/SKILL.md`。
+- OpenAI Codex 兼容 agent：使用 `AGENTS.md`。
+- Claude Code 兼容 agent：使用 `CLAUDE.md`。
 - Cursor：使用 `IDE rule adapter directory/tabular-file-understanding.mdc`。
 
 ---
@@ -468,7 +492,7 @@ cd tabular-file-understanding-agent-skill
 直接使用：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile
 ```
@@ -478,7 +502,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 这个仓库是一个 skill collection，真正的 skill 目录是：
 
 ```text
-skills/tabular-file-understanding/
+skills/data-science/tabular-file-understanding/
 ```
 
 对于本地 Hermes，可以把该目录复制或软链接到 Hermes skills 目录，例如：
@@ -494,7 +518,7 @@ ln -sfn "$PWD/skills/tabular-file-understanding" \
 对于其他兼容 Agent Skills 的系统，复制或引用：
 
 ```text
-skills/tabular-file-understanding/
+skills/data-science/tabular-file-understanding/
 ```
 
 ---
@@ -533,7 +557,7 @@ skills/tabular-file-understanding/
 运行基础 smoke test：
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
 ```
 
 创建一个小型 CSV 并 profiling：
@@ -541,7 +565,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check
 ```bash
 printf 'country,date,flow\nUS,2024-01-01,1.2\nCN,2024-01-02,3.4\n' > /tmp/tfu-smoke.csv
 
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input /tmp/tfu-smoke.csv \
   --out /tmp/tfu-smoke-profile
 ```
@@ -560,7 +584,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 完整检查清单见：
 
 ```text
-skills/tabular-file-understanding/references/validation-checklist.md
+skills/data-science/tabular-file-understanding/references/validation-checklist.md
 ```
 
 ---

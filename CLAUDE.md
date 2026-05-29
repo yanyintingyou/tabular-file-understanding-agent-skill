@@ -1,13 +1,17 @@
-# Claude-compatible instruction file — Tabular File Understanding
+# Claude Code Instructions — Tabular File Understanding Agent Skill
 
-This repository contains an Agent Skills-compatible skill at:
+Use the root `SKILL.md` as the canonical instructions for this repository.
+
+For Claude Code skill installation, copy the packaged skill directory:
 
 ```text
-skills/tabular-file-understanding/SKILL.md
+skills/data-science/tabular-file-understanding/
 ```
 
-When a task involves understanding a large CSV, TSV, Excel `.xlsx`, or PDF table file, first follow that skill. Use Python only, generate the four canonical artifacts, and load only `table_digest.md` plus `ambiguities.md` into the conversation unless the user asks for raw samples.
+to:
 
-For sensitive files, prefer `--redact-samples` or `--no-samples`.
+```text
+~/.claude/skills/data-science/tabular-file-understanding/
+```
 
-Author: yanyintingyou — https://github.com/yanyintingyou
+The directory name and the `name:` field are both `tabular-file-understanding`. Do not reference older repository layouts.

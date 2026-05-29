@@ -16,7 +16,7 @@ Run these before opening a pull request:
 
 ```bash
 python -m py_compile \
-  skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+  skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   tests/test_profile_examples.py
 
 python tests/test_profile_examples.py
@@ -34,6 +34,6 @@ If a change affects CLI behavior, privacy behavior, output schema, or supported 
 
 - `README.md`
 - `README.zh-CN.md`
-- `skills/tabular-file-understanding/SKILL.md`
-- relevant files under `skills/tabular-file-understanding/references/`
+- `skills/data-science/tabular-file-understanding/SKILL.md`
+- relevant files under `skills/data-science/tabular-file-understanding/references/`
 - `CHANGELOG.md`

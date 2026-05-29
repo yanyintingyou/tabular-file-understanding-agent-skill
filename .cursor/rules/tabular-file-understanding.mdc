@@ -1,23 +1,7 @@
 ---
-description: Understand large CSV, TSV, Excel, or PDF table files by generating a Python-only structural digest before LLM reasoning.
-globs: ["**/*.csv", "**/*.tsv", "**/*.xlsx", "**/*.xlsm", "**/*.pdf"]
+description: Load tabular-file-understanding when the task matches the skill description.
+globs: ["**/*.md", "**/*"]
 alwaysApply: false
 ---
 
-# Tabular File Understanding Rule
-
-When working with large tabular files, follow the skill instructions in:
-
-```text
-skills/tabular-file-understanding/SKILL.md
-```
-
-Use Python only. Do not paste large tables into chat context. Generate compact profiling artifacts with:
-
-```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --input <file> --out <output_dir>
-```
-
-Read `table_digest.md` and `ambiguities.md` before doing downstream analysis.
-
-For sensitive files, add `--redact-samples` or `--no-samples`.
+Use the repository root `SKILL.md` as the authoritative instruction file. The packaged skill copy is `skills/data-science/tabular-file-understanding/SKILL.md`.

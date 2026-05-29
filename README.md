@@ -18,6 +18,30 @@ License: MIT
 
 ---
 
+
+## Cross-agent compatibility and installation
+
+This repository now uses a dual-layout skill structure:
+
+```text
+repo/
+├── SKILL.md                                      # canonical cross-agent instructions
+├── AGENTS.md                                    # Codex/OpenAI project instructions
+├── CLAUDE.md                                    # Claude Code project instructions
+├── agents/openai.yaml                           # optional OpenAI agent metadata
+└── skills/data-science/tabular-file-understanding/SKILL.md  # Hermes/OpenClaw packaged skill copy
+```
+
+The root `SKILL.md` and the packaged `skills/data-science/tabular-file-understanding/SKILL.md` are intentionally byte-identical. Supporting files, when present, are available next to both copies.
+
+### Install as a reusable skill
+
+- **Claude Code**: copy `skills/data-science/tabular-file-understanding/` to `~/.claude/skills/data-science/tabular-file-understanding/`.
+- **OpenAI Codex / OpenAI agents**: keep `AGENTS.md` when working in this repository, or copy `skills/data-science/tabular-file-understanding/` to `~/.agents/skills/data-science/tabular-file-understanding/` for a reusable skill.
+- **OpenClaw**: copy `skills/data-science/tabular-file-understanding/` to either `<workspace>/skills/data-science/tabular-file-understanding/`, `<workspace>/.agents/skills/data-science/tabular-file-understanding/`, or `~/.openclaw/skills/data-science/tabular-file-understanding/`.
+- **Hermes Agent**: copy `skills/data-science/tabular-file-understanding/` to `~/.hermes/skills/data-science/tabular-file-understanding/`, then start a new Hermes session.
+- **Generic AgentSkills loaders**: use the directory that contains `SKILL.md`; the skill name is `tabular-file-understanding`.
+
 ## What is this?
 
 `tabular-file-understanding` is an Agent Skills-compatible toolkit for the first and most fragile step in data work: understanding what a tabular file actually contains.
@@ -225,13 +249,13 @@ domain_indicator_catalog.md
 Check optional dependency status:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
 ```
 
 Profile a file:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile
 ```
@@ -247,7 +271,7 @@ Then read:
 For a deeper but slower CSV scan:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --full-scan
@@ -270,7 +294,7 @@ For IMF BOP-style exports, SDMX CSV files, and macroeconomic country-indicator-t
 Example for an IMF BOP-like file:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./tabular-profile \
   --domain-preset imf-bop
@@ -287,7 +311,7 @@ Available domain presets:
 If you have codelists, pass them as CSV files:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./tabular-profile \
   --domain-preset sdmx \
@@ -302,7 +326,7 @@ Mapping files should use columns like `code,label,description`. Without mappings
 For variable discovery in very large IMF BOP/PIP files, add `--domain-full-scan`:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input bop.csv \
   --out ./bop-profile \
   --domain-preset imf-bop \
@@ -342,7 +366,7 @@ Default thresholds:
 Manual override:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --output-policy compact
@@ -355,7 +379,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 For sensitive files, use lightweight sample redaction:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --redact-samples
@@ -364,7 +388,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 For stricter schema-only profiling without row or column value samples:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --no-samples
@@ -375,7 +399,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 You can also limit retained cell length:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input sensitive.csv \
   --out ./tabular-profile \
   --redact-samples \
@@ -389,7 +413,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 This skill stops at structural understanding, but it can write a small optional hint file for downstream workflows:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile \
   --schema-preset generic
@@ -408,8 +432,8 @@ Available presets:
 
 ```text
 .
-├── agent instruction file
-├── Claude-compatible instruction file
+├── AGENTS.md
+├── CLAUDE.md
 ├── LICENSE
 ├── README.md
 ├── README.zh-CN.md
@@ -449,9 +473,9 @@ Available presets:
 
 This repository is designed to work across multiple agent ecosystems:
 
-- Agent Skills / Hermes / OpenClaw: use `skills/tabular-file-understanding/SKILL.md`.
-- OpenAI Codex-compatible agents: use `agent instruction file`.
-- Claude Code-compatible agents: use `Claude-compatible instruction file`.
+- Agent Skills / Hermes / OpenClaw: use `skills/data-science/tabular-file-understanding/SKILL.md`.
+- OpenAI Codex-compatible agents: use `AGENTS.md`.
+- Claude Code-compatible agents: use `CLAUDE.md`.
 - Cursor: use `IDE rule adapter directory/tabular-file-understanding.mdc`.
 
 ---
@@ -468,7 +492,7 @@ cd tabular-file-understanding-agent-skill
 Use directly:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input your_file.csv \
   --out ./tabular-profile
 ```
@@ -478,7 +502,7 @@ python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
 This repository is a skill collection: the actual skill directory is:
 
 ```text
-skills/tabular-file-understanding/
+skills/data-science/tabular-file-understanding/
 ```
 
 For a local Hermes setup, copy or symlink that directory into your Hermes skills directory, for example:
@@ -494,7 +518,7 @@ If your Hermes version supports skill taps/install commands, install the reposit
 For other Agent Skills-compatible systems, copy or reference:
 
 ```text
-skills/tabular-file-understanding/
+skills/data-science/tabular-file-understanding/
 ```
 
 ---
@@ -533,7 +557,7 @@ skills/tabular-file-understanding/
 Run a basic smoke test:
 
 ```bash
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py --check-deps
 ```
 
 Create a small CSV and profile it:
@@ -541,7 +565,7 @@ Create a small CSV and profile it:
 ```bash
 printf 'country,date,flow\nUS,2024-01-01,1.2\nCN,2024-01-02,3.4\n' > /tmp/tfu-smoke.csv
 
-python skills/tabular-file-understanding/scripts/profile_tabular_file.py \
+python skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py \
   --input /tmp/tfu-smoke.csv \
   --out /tmp/tfu-smoke-profile
 ```
@@ -560,7 +584,7 @@ Expected files:
 For the full checklist, see:
 
 ```text
-skills/tabular-file-understanding/references/validation-checklist.md
+skills/data-science/tabular-file-understanding/references/validation-checklist.md
 ```
 
 ---

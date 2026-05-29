@@ -14,9 +14,9 @@ Original documentation:
 This package follows that structure:
 
 ```text
-skills/tabular-file-understanding/SKILL.md
-skills/tabular-file-understanding/scripts/profile_tabular_file.py
-skills/tabular-file-understanding/references/*.md
+skills/data-science/tabular-file-understanding/SKILL.md
+skills/data-science/tabular-file-understanding/scripts/profile_tabular_file.py
+skills/data-science/tabular-file-understanding/references/*.md
 ```
 
 ## Claude Code / Claude Skills
