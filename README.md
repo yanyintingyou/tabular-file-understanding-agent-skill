@@ -9,6 +9,9 @@
 ![IMF BOP/PIP](https://img.shields.io/badge/IMF%20BOP%2FPIP-tested-brightgreen)
 ![Stdlib](https://img.shields.io/badge/Core-Python%20stdlib-lightgrey)
 
+> [!NOTE]
+> **GB-scale stress-tested:** the profiler has already passed real IMF BOP/PIP stress tests, including a 2GB IMF BOP file and a 17GB IMF PIP file, producing compact artifacts that let LLM agents understand the table structure without loading raw rows into context.
+
 **Understand large and messy tabular files before asking an LLM to analyze them.**
 
 A portable, Python-only agent skill that helps LLM agents understand large, messy, or structurally complex CSV, TSV, Excel, and PDF table files **without loading the full table into the context window**.

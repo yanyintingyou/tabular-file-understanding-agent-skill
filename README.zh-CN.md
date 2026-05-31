@@ -9,6 +9,9 @@
 ![IMF BOP/PIP](https://img.shields.io/badge/IMF%20BOP%2FPIP-tested-brightgreen)
 ![Stdlib](https://img.shields.io/badge/Core-Python%20stdlib-lightgrey)
 
+> [!NOTE]
+> **已通过 GB 级压力测试：** profiler 已经通过真实 IMF BOP/PIP 文件测试，包括 2GB IMF BOP 文件和 17GB IMF PIP 文件；它会生成紧凑产物，让 LLM agent 在不加载原始行数据的情况下理解表格结构。
+
 **在让 LLM 分析表格之前，先理解大型、混乱、复杂表格文件的结构。**
 
 一个可移植、仅依赖 Python 的 agent skill，用于帮助 LLM agent 理解大型、混乱或结构复杂的 CSV、TSV、Excel 和 PDF 表格文件，**避免把完整表格直接塞进上下文窗口**。
